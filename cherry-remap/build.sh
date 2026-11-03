@@ -3,7 +3,7 @@ set -e
 cd "$(dirname "$0")"
 APP="CherryRemap.app"
 rm -rf "$APP"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp -R Resources/*.lproj "$APP/Contents/Resources/"
+cp -R Resources/*.lproj Resources/AppIcon.icns "$APP/Contents/Resources/"
 swiftc -O -parse-as-library CherryRemap.swift Lighting.swift -o "$APP/Contents/MacOS/CherryRemap"
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -11,6 +11,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <plist version="1.0"><dict>
 <key>CFBundleDevelopmentRegion</key><string>en</string>
 <key>CFBundleLocalizations</key><array><string>en</string><string>nl</string></array>
+<key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundleIdentifier</key><string>nl.bongers.cherryremap</string>
 <key>CFBundleName</key><string>Cherry Remap</string>
 <key>CFBundleExecutable</key><string>CherryRemap</string>

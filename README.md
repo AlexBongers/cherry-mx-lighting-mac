@@ -31,6 +31,8 @@ open CherryRemap.app
 
 `build.sh` compiles with `swiftc` and signs the app. SwiftUI's `@State` macro is not available in the Command Line Tools, so the code uses `ObservableObject` instead.
 
+The app icon is drawn by code: `swift cherry-remap/tools/make-icon.swift` writes the iconset into `cherry-remap/build/`, and `iconutil -c icns` turns it into `Resources/AppIcon.icns`.
+
 ### Permissions
 
 Writing to the keyboard needs **System Settings, Privacy & Security, Input Monitoring** for CherryRemap. macOS ties that permission to the app's code signature, so an ad-hoc signature loses it on every rebuild. To keep it, create a local code signing certificate named `CherryRemap Local Signing` in your login keychain and mark it as trusted for code signing; `build.sh` uses it automatically when it exists.

@@ -4,3 +4,4 @@ vm-downloads/
 *.iso
 *.pcapng
 *.apm
+build/
