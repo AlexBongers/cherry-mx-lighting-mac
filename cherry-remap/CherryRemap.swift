@@ -2,6 +2,14 @@ import SwiftUI
 import IOKit.hid
 import ServiceManagement
 
+// MARK: - Localisation
+
+/// English source text is the key; Resources/nl.lproj holds the Dutch translation.
+func L(_ key: String, _ args: CVarArg...) -> String {
+    let format = NSLocalizedString(key, comment: "")
+    return args.isEmpty ? format : String(format: format, arguments: args)
+}
+
 // MARK: - Keys
 
 struct Key: Identifiable, Hashable {
@@ -9,23 +17,23 @@ struct Key: Identifiable, Hashable {
     let name: String
 }
 
-private func kb(_ usage: UInt64, _ name: String) -> Key { Key(id: 0x7_0000_0000 | usage, name: name) }
-private func media(_ usage: UInt64, _ name: String) -> Key { Key(id: 0xC_0000_0000 | usage, name: name) }
+private func kb(_ usage: UInt64, _ name: String) -> Key { Key(id: 0x7_0000_0000 | usage, name: L(name)) }
+private func media(_ usage: UInt64, _ name: String) -> Key { Key(id: 0xC_0000_0000 | usage, name: L(name)) }
 
 let allKeys: [Key] = {
     var keys: [Key] = [
         kb(0x39, "Caps Lock"), kb(0x29, "Esc"), kb(0x2B, "Tab"), kb(0x28, "Return"),
-        kb(0x2C, "Spatie"), kb(0x2A, "Backspace"), kb(0x4C, "Forward Delete"),
-        kb(0xE0, "Control (links)"), kb(0xE1, "Shift (links)"), kb(0xE2, "Option (links)"), kb(0xE3, "Command (links)"),
-        kb(0xE4, "Control (rechts)"), kb(0xE5, "Shift (rechts)"), kb(0xE6, "Option (rechts)"), kb(0xE7, "Command (rechts)"),
+        kb(0x2C, "Space"), kb(0x2A, "Backspace"), kb(0x4C, "Forward Delete"),
+        kb(0xE0, "Control (left)"), kb(0xE1, "Shift (left)"), kb(0xE2, "Option (left)"), kb(0xE3, "Command (left)"),
+        kb(0xE4, "Control (right)"), kb(0xE5, "Shift (right)"), kb(0xE6, "Option (right)"), kb(0xE7, "Command (right)"),
         kb(0x46, "Print Screen"), kb(0x47, "Scroll Lock"), kb(0x48, "Pause"), kb(0x65, "Menu"),
         kb(0x49, "Insert"), kb(0x4A, "Home"), kb(0x4D, "End"), kb(0x4B, "Page Up"), kb(0x4E, "Page Down"),
-        kb(0x50, "Pijl links"), kb(0x4F, "Pijl rechts"), kb(0x52, "Pijl omhoog"), kb(0x51, "Pijl omlaag"),
+        kb(0x50, "Arrow left"), kb(0x4F, "Arrow right"), kb(0x52, "Arrow up"), kb(0x51, "Arrow down"),
     ]
     for i in 0..<12 { keys.append(kb(0x3A + UInt64(i), "F\(i + 1)")) }
     keys += [
-        media(0xE2, "Dempen"), media(0xE9, "Volume omhoog"), media(0xEA, "Volume omlaag"),
-        media(0xCD, "Afspelen/Pauze"), media(0xB5, "Volgend nummer"), media(0xB6, "Vorig nummer"),
+        media(0xE2, "Mute"), media(0xE9, "Volume up"), media(0xEA, "Volume down"),
+        media(0xCD, "Play/Pause"), media(0xB5, "Next track"), media(0xB6, "Previous track"),
     ]
     return keys
 }()
@@ -47,11 +55,11 @@ struct Preset: Identifiable {
 let presets: [Preset] = [
     Preset(name: "Caps Lock → Esc", pairs: [(0x7_0000_0039, 0x7_0000_0029)]),
     Preset(name: "Caps Lock → Control", pairs: [(0x7_0000_0039, 0x7_0000_00E0)]),
-    Preset(name: "Windows-indeling → Mac (Option ⇄ Command)", pairs: [
+    Preset(name: L("PC layout → Mac (Option ⇄ Command)"), pairs: [
         (0x7_0000_00E2, 0x7_0000_00E3), (0x7_0000_00E3, 0x7_0000_00E2),
         (0x7_0000_00E6, 0x7_0000_00E7), (0x7_0000_00E7, 0x7_0000_00E6),
     ]),
-    Preset(name: "F7–F12 als mediatoetsen", pairs: [
+    Preset(name: L("F7–F12 as media keys"), pairs: [
         (0x7_0000_0040, 0xC_0000_00B6), (0x7_0000_0041, 0xC_0000_00CD), (0x7_0000_0042, 0xC_0000_00B5),
         (0x7_0000_0043, 0xC_0000_00E2), (0x7_0000_0044, 0xC_0000_00EA), (0x7_0000_0045, 0xC_0000_00E9),
     ]),
@@ -114,10 +122,10 @@ final class Store: ObservableObject {
             try p.run(); p.waitUntilExit()
             let msg = String(data: err.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
             DispatchQueue.main.async {
-                self.status = p.terminationStatus == 0 ? "\(self.mappings.count) remap(s) actief" : "Fout: \(msg)"
+                self.status = p.terminationStatus == 0 ? L("%d remap(s) active", self.mappings.count) : L("Error: %@", msg)
             }
         } catch {
-            DispatchQueue.main.async { self.status = "hidutil niet gestart: \(error.localizedDescription)" }
+            DispatchQueue.main.async { self.status = L("hidutil could not start: %@", error.localizedDescription) }
         }
     }
 
@@ -155,28 +163,28 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Cherry MX 10.0N RGB").font(.headline)
 
-            GroupBox("Verlichting") {
+            GroupBox("Lighting") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Picker("Modus", selection: $lighting.mode) {
+                    Picker("Mode", selection: $lighting.mode) {
                         ForEach(lightModes) { Text($0.name).tag($0.id) }
                     }
                     HStack {
-                        Text("Snelheid")
-                        Text("snel").font(.caption).foregroundStyle(.secondary)
+                        Text("Speed")
+                        Text("fast").font(.caption).foregroundStyle(.secondary)
                         Slider(value: $lighting.speed, in: 0...4, step: 1)
-                        Text("traag").font(.caption).foregroundStyle(.secondary)
+                        Text("slow").font(.caption).foregroundStyle(.secondary)
                     }
                     HStack {
-                        Text("Helderheid")
-                        Text("uit").font(.caption).foregroundStyle(.secondary)
+                        Text("Brightness")
+                        Text("off").font(.caption).foregroundStyle(.secondary)
                         Slider(value: $lighting.brightness, in: 0...4, step: 1)
                         Text("max").font(.caption).foregroundStyle(.secondary)
                     }
-                    ColorPicker("Kleur", selection: $lighting.color, supportsOpacity: false)
+                    ColorPicker("Color", selection: $lighting.color, supportsOpacity: false)
                     HStack {
-                        Button("Toepassen") { lighting.apply() }
-                        Button("Uit") { lighting.turnOff() }
-                        Button("Zoek toetsenbord") { lighting.describeInterfaces() }
+                        Button("Apply") { lighting.apply() }
+                        Button("Off") { lighting.turnOff() }
+                        Button("Find keyboard") { lighting.describeInterfaces() }
                         Spacer()
                     }
                     if !lighting.status.isEmpty {
@@ -185,7 +193,7 @@ struct ContentView: View {
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            GroupBox("Voorinstellingen") {
+            GroupBox("Presets") {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(presets) { p in
                         Button(p.name) { p.pairs.forEach { store.add($0.0, $0.1) } }.buttonStyle(.link)
@@ -193,9 +201,9 @@ struct ContentView: View {
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            GroupBox("Actieve remaps") {
+            GroupBox("Active remaps") {
                 VStack(alignment: .leading, spacing: 6) {
-                    if store.mappings.isEmpty { Text("Geen").foregroundStyle(.secondary) }
+                    if store.mappings.isEmpty { Text("None").foregroundStyle(.secondary) }
                     ForEach(store.mappings) { m in
                         HStack {
                             Text("\(keyName(m.src)) → \(keyName(m.dst))")
@@ -207,27 +215,27 @@ struct ContentView: View {
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            GroupBox("Nieuwe remap") {
+            GroupBox("New remap") {
                 HStack {
                     Picker("", selection: $form.newSrc) { ForEach(allKeys) { Text($0.name).tag($0.id) } }.labelsHidden()
                     Image(systemName: "arrow.right")
                     Picker("", selection: $form.newDst) { ForEach(allKeys) { Text($0.name).tag($0.id) } }.labelsHidden()
-                    Button("Voeg toe") { store.add(form.newSrc, form.newDst) }
+                    Button("Add") { store.add(form.newSrc, form.newDst) }
                 }
             }
 
-            Toggle("Alleen op het Cherry-toetsenbord", isOn: $store.cherryOnly)
-            Toggle("Open bij inloggen", isOn: $form.launchAtLogin)
+            Toggle("Only on the Cherry keyboard", isOn: $store.cherryOnly)
+            Toggle("Launch at login", isOn: $form.launchAtLogin)
                 .onChange(of: form.launchAtLogin) { _, on in
                     do { on ? try SMAppService.mainApp.register() : try SMAppService.mainApp.unregister() }
-                    catch { store.status = "Inloggen-instelling mislukt: \(error.localizedDescription)" }
+                    catch { store.status = L("Login setting failed: %@", error.localizedDescription) }
                 }
 
             HStack {
                 Text(store.status).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                 Spacer()
-                Button("Alles uit") { store.mappings = [] }
-                Button("Stop") { store.apply(clear: true); NSApp.terminate(nil) }
+                Button("Clear all") { store.mappings = [] }
+                Button("Quit") { store.apply(clear: true); NSApp.terminate(nil) }
             }
         }
         .padding(14)

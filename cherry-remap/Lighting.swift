@@ -64,11 +64,11 @@ final class Lighting: ObservableObject {
 
     func describeInterfaces() {
         let devs = cherryDevices()
-        if devs.isEmpty { status = "Geen Cherry-toetsenbord gevonden (hangt het nog in een VM?)"; return }
+        if devs.isEmpty { status = L("No Cherry keyboard found (is it still attached to a VM?)"); return }
         let lines = devs.map {
             "page \(intProp($0, kIOHIDPrimaryUsagePageKey)) usage \(intProp($0, kIOHIDPrimaryUsageKey)) out \(intProp($0, kIOHIDMaxOutputReportSizeKey))"
         }
-        status = "\(devs.count) interface(s): " + lines.joined(separator: "; ")
+        status = L("%d interface(s): %@", devs.count, lines.joined(separator: "; "))
     }
 
     /// Switches all lighting off without touching the stored settings, so `apply()` brings them back.
@@ -78,11 +78,11 @@ final class Lighting: ObservableObject {
 
     private func apply(brightnessOverride: UInt8?) {
         guard let dev = lightingDevice() else {
-            status = "Geen interface voor verlichting gevonden"
+            status = L("No lighting interface found")
             return
         }
         guard IOHIDDeviceOpen(dev, IOOptionBits(kIOHIDOptionsTypeNone)) == kIOReturnSuccess else {
-            status = "Openen mislukt: geef de app toestemming onder Privacy > Invoercontrole"
+            status = L("Opening failed: allow the app under Privacy & Security > Input Monitoring")
             return
         }
         defer { IOHIDDeviceClose(dev, IOOptionBits(kIOHIDOptionsTypeNone)) }
@@ -102,12 +102,12 @@ final class Lighting: ObservableObject {
         for frame in frames {
             let r = IOHIDDeviceSetReport(dev, kIOHIDReportTypeOutput, CFIndex(frame[0]), frame, frame.count)
             guard r == kIOReturnSuccess else {
-                status = String(format: "Schrijven mislukt (0x%08X)", r)
+                status = L("Writing failed (0x%08X)", r)
                 return
             }
             Thread.sleep(forTimeInterval: 0.02)
         }
-        status = brightnessOverride == 0 ? "Verlichting uit" : "Verlichting ingesteld"
+        status = brightnessOverride == 0 ? L("Lighting off") : L("Lighting set")
     }
 }
 

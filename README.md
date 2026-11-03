@@ -10,7 +10,7 @@ A small native macOS menu bar app that controls the RGB lighting of a **Cherry M
 - **Key remapping** through `hidutil`: Caps Lock to Esc or Control, swap Option and Command for a PC layout, F7 to F12 as media keys, or your own pairs. It is reapplied when the keyboard is plugged in again.
 - Lives in the menu bar, no Dock icon. About 40 MB of memory and 0% CPU when idle.
 
-The interface is in Dutch.
+The interface is available in **English and Dutch** and follows the language of macOS. Translations live in `cherry-remap/Resources/<lang>.lproj/Localizable.strings`; the English text is the key, so adding a language means adding one file.
 
 ## Tested on
 

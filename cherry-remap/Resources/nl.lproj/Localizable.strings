@@ -1,0 +1,56 @@
+/* English source text is the key; this is the Dutch translation. */
+"Lighting" = "Verlichting";
+"Mode" = "Modus";
+"Speed" = "Snelheid";
+"fast" = "snel";
+"slow" = "traag";
+"Brightness" = "Helderheid";
+"off" = "uit";
+"Color" = "Kleur";
+"Apply" = "Toepassen";
+"Off" = "Uit";
+"Find keyboard" = "Zoek toetsenbord";
+"Presets" = "Voorinstellingen";
+"Active remaps" = "Actieve remaps";
+"None" = "Geen";
+"New remap" = "Nieuwe remap";
+"Add" = "Voeg toe";
+"Only on the Cherry keyboard" = "Alleen op het Cherry-toetsenbord";
+"Launch at login" = "Open bij inloggen";
+"Clear all" = "Alles wissen";
+"Quit" = "Stop";
+
+"PC layout → Mac (Option ⇄ Command)" = "Windows-indeling → Mac (Option ⇄ Command)";
+"F7–F12 as media keys" = "F7–F12 als mediatoetsen";
+
+"Space" = "Spatie";
+"Control (left)" = "Control (links)";
+"Shift (left)" = "Shift (links)";
+"Option (left)" = "Option (links)";
+"Command (left)" = "Command (links)";
+"Control (right)" = "Control (rechts)";
+"Shift (right)" = "Shift (rechts)";
+"Option (right)" = "Option (rechts)";
+"Command (right)" = "Command (rechts)";
+"Arrow left" = "Pijl links";
+"Arrow right" = "Pijl rechts";
+"Arrow up" = "Pijl omhoog";
+"Arrow down" = "Pijl omlaag";
+"Mute" = "Dempen";
+"Volume up" = "Volume omhoog";
+"Volume down" = "Volume omlaag";
+"Play/Pause" = "Afspelen/Pauze";
+"Next track" = "Volgend nummer";
+"Previous track" = "Vorig nummer";
+
+"%d remap(s) active" = "%d remap(s) actief";
+"Error: %@" = "Fout: %@";
+"hidutil could not start: %@" = "hidutil niet gestart: %@";
+"Login setting failed: %@" = "Inloggen-instelling mislukt: %@";
+"No Cherry keyboard found (is it still attached to a VM?)" = "Geen Cherry-toetsenbord gevonden (hangt het nog in een VM?)";
+"%d interface(s): %@" = "%d interface(s): %@";
+"No lighting interface found" = "Geen interface voor verlichting gevonden";
+"Opening failed: allow the app under Privacy & Security > Input Monitoring" = "Openen mislukt: geef de app toestemming onder Privacy en beveiliging > Invoercontrole";
+"Writing failed (0x%08X)" = "Schrijven mislukt (0x%08X)";
+"Lighting off" = "Verlichting uit";
+"Lighting set" = "Verlichting ingesteld";
