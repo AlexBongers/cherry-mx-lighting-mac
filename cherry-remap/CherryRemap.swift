@@ -4,9 +4,28 @@ import ServiceManagement
 
 // MARK: - Localisation
 
-/// English source text is the key; Resources/nl.lproj holds the Dutch translation.
+/// English source text is the key; Resources/<lang>.lproj holds the translation.
+/// The language is switchable at runtime, so views observe `Language.shared`.
+final class Language: ObservableObject {
+    static let shared = Language()
+
+    @Published var code: String { didSet { UserDefaults.standard.set(code, forKey: "language") } }
+
+    private init() {
+        if let saved = UserDefaults.standard.string(forKey: "language"), ["en", "nl"].contains(saved) {
+            code = saved
+        } else {
+            code = (Locale.preferredLanguages.first ?? "en").hasPrefix("nl") ? "nl" : "en"
+        }
+    }
+
+    var bundle: Bundle {
+        Bundle.main.path(forResource: code, ofType: "lproj").flatMap(Bundle.init(path:)) ?? .main
+    }
+}
+
 func L(_ key: String, _ args: CVarArg...) -> String {
-    let format = NSLocalizedString(key, comment: "")
+    let format = Language.shared.bundle.localizedString(forKey: key, value: key, table: nil)
     return args.isEmpty ? format : String(format: format, arguments: args)
 }
 
@@ -14,11 +33,12 @@ func L(_ key: String, _ args: CVarArg...) -> String {
 
 struct Key: Identifiable, Hashable {
     let id: UInt64
-    let name: String
+    let nameKey: String
+    var name: String { L(nameKey) }
 }
 
-private func kb(_ usage: UInt64, _ name: String) -> Key { Key(id: 0x7_0000_0000 | usage, name: L(name)) }
-private func media(_ usage: UInt64, _ name: String) -> Key { Key(id: 0xC_0000_0000 | usage, name: L(name)) }
+private func kb(_ usage: UInt64, _ name: String) -> Key { Key(id: 0x7_0000_0000 | usage, nameKey: name) }
+private func media(_ usage: UInt64, _ name: String) -> Key { Key(id: 0xC_0000_0000 | usage, nameKey: name) }
 
 let allKeys: [Key] = {
     var keys: [Key] = [
@@ -48,18 +68,19 @@ struct Mapping: Codable, Identifiable, Equatable {
 
 struct Preset: Identifiable {
     let id = UUID()
-    let name: String
+    let nameKey: String
+    var name: String { L(nameKey) }
     let pairs: [(UInt64, UInt64)]
 }
 
 let presets: [Preset] = [
-    Preset(name: "Caps Lock → Esc", pairs: [(0x7_0000_0039, 0x7_0000_0029)]),
-    Preset(name: "Caps Lock → Control", pairs: [(0x7_0000_0039, 0x7_0000_00E0)]),
-    Preset(name: L("PC layout → Mac (Option ⇄ Command)"), pairs: [
+    Preset(nameKey: "Caps Lock → Esc", pairs: [(0x7_0000_0039, 0x7_0000_0029)]),
+    Preset(nameKey: "Caps Lock → Control", pairs: [(0x7_0000_0039, 0x7_0000_00E0)]),
+    Preset(nameKey: "PC layout → Mac (Option ⇄ Command)", pairs: [
         (0x7_0000_00E2, 0x7_0000_00E3), (0x7_0000_00E3, 0x7_0000_00E2),
         (0x7_0000_00E6, 0x7_0000_00E7), (0x7_0000_00E7, 0x7_0000_00E6),
     ]),
-    Preset(name: L("F7–F12 as media keys"), pairs: [
+    Preset(nameKey: "F7–F12 as media keys", pairs: [
         (0x7_0000_0040, 0xC_0000_00B6), (0x7_0000_0041, 0xC_0000_00CD), (0x7_0000_0042, 0xC_0000_00B5),
         (0x7_0000_0043, 0xC_0000_00E2), (0x7_0000_0044, 0xC_0000_00EA), (0x7_0000_0045, 0xC_0000_00E9),
     ]),
@@ -157,34 +178,45 @@ final class FormState: ObservableObject {
 struct ContentView: View {
     @ObservedObject var store: Store
     @ObservedObject var lighting: Lighting
+    @ObservedObject private var language = Language.shared
     @StateObject private var form = FormState()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Cherry MX 10.0N RGB").font(.headline)
+            HStack {
+                Text("Cherry MX 10.0N RGB").font(.headline)
+                Spacer()
+                Picker("", selection: $language.code) {
+                    Text("EN").tag("en")
+                    Text("NL").tag("nl")
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 84)
+            }
 
-            GroupBox("Lighting") {
+            GroupBox(L("Lighting")) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Picker("Mode", selection: $lighting.mode) {
+                    Picker(L("Mode"), selection: $lighting.mode) {
                         ForEach(lightModes) { Text($0.name).tag($0.id) }
                     }
                     HStack {
-                        Text("Speed")
-                        Text("fast").font(.caption).foregroundStyle(.secondary)
+                        Text(L("Speed"))
+                        Text(L("fast")).font(.caption).foregroundStyle(.secondary)
                         Slider(value: $lighting.speed, in: 0...4, step: 1)
-                        Text("slow").font(.caption).foregroundStyle(.secondary)
+                        Text(L("slow")).font(.caption).foregroundStyle(.secondary)
                     }
                     HStack {
-                        Text("Brightness")
-                        Text("off").font(.caption).foregroundStyle(.secondary)
+                        Text(L("Brightness"))
+                        Text(L("off")).font(.caption).foregroundStyle(.secondary)
                         Slider(value: $lighting.brightness, in: 0...4, step: 1)
                         Text("max").font(.caption).foregroundStyle(.secondary)
                     }
-                    ColorPicker("Color", selection: $lighting.color, supportsOpacity: false)
+                    ColorPicker(L("Color"), selection: $lighting.color, supportsOpacity: false)
                     HStack {
-                        Button("Apply") { lighting.apply() }
-                        Button("Off") { lighting.turnOff() }
-                        Button("Find keyboard") { lighting.describeInterfaces() }
+                        Button(L("Apply")) { lighting.apply() }
+                        Button(L("Off")) { lighting.turnOff() }
+                        Button(L("Find keyboard")) { lighting.describeInterfaces() }
                         Spacer()
                     }
                     if !lighting.status.isEmpty {
@@ -193,7 +225,7 @@ struct ContentView: View {
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            GroupBox("Presets") {
+            GroupBox(L("Presets")) {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(presets) { p in
                         Button(p.name) { p.pairs.forEach { store.add($0.0, $0.1) } }.buttonStyle(.link)
@@ -201,9 +233,9 @@ struct ContentView: View {
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            GroupBox("Active remaps") {
+            GroupBox(L("Active remaps")) {
                 VStack(alignment: .leading, spacing: 6) {
-                    if store.mappings.isEmpty { Text("None").foregroundStyle(.secondary) }
+                    if store.mappings.isEmpty { Text(L("None")).foregroundStyle(.secondary) }
                     ForEach(store.mappings) { m in
                         HStack {
                             Text("\(keyName(m.src)) → \(keyName(m.dst))")
@@ -215,17 +247,17 @@ struct ContentView: View {
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            GroupBox("New remap") {
+            GroupBox(L("New remap")) {
                 HStack {
                     Picker("", selection: $form.newSrc) { ForEach(allKeys) { Text($0.name).tag($0.id) } }.labelsHidden()
                     Image(systemName: "arrow.right")
                     Picker("", selection: $form.newDst) { ForEach(allKeys) { Text($0.name).tag($0.id) } }.labelsHidden()
-                    Button("Add") { store.add(form.newSrc, form.newDst) }
+                    Button(L("Add")) { store.add(form.newSrc, form.newDst) }
                 }
             }
 
-            Toggle("Only on the Cherry keyboard", isOn: $store.cherryOnly)
-            Toggle("Launch at login", isOn: $form.launchAtLogin)
+            Toggle(L("Only on the Cherry keyboard"), isOn: $store.cherryOnly)
+            Toggle(L("Launch at login"), isOn: $form.launchAtLogin)
                 .onChange(of: form.launchAtLogin) { _, on in
                     do { on ? try SMAppService.mainApp.register() : try SMAppService.mainApp.unregister() }
                     catch { store.status = L("Login setting failed: %@", error.localizedDescription) }
@@ -234,8 +266,8 @@ struct ContentView: View {
             HStack {
                 Text(store.status).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                 Spacer()
-                Button("Clear all") { store.mappings = [] }
-                Button("Quit") { store.apply(clear: true); NSApp.terminate(nil) }
+                Button(L("Clear all")) { store.mappings = [] }
+                Button(L("Quit")) { store.apply(clear: true); NSApp.terminate(nil) }
             }
         }
         .padding(14)
